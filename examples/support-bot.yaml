@@ -1,0 +1,38 @@
+bot:
+  name: SupportBot
+
+flows:
+  start:
+    message: "Hi! How can I help you?"
+    intents:
+      - name: order_issue
+        examples:
+          - "problem with order"
+          - "order not delivered"
+          - "my order"
+        next: ask_order_id
+
+      - name: refund
+        examples:
+          - "refund"
+          - "money back"
+          - "I want a refund"
+        next: refund_flow
+
+  ask_order_id:
+    message: "Please enter your order ID"
+    input:
+      type: text
+      save_as: order_id
+    next: process_order
+
+  process_order:
+    message: "Thank you! I've received your order ID: {{order_id}}. Let me check on that for you."
+    next: end
+
+  refund_flow:
+    message: "Refund process started"
+    next: end
+
+  end:
+    message: "Thank you!"
