@@ -1,0 +1,124 @@
+bot:
+  name: CoffeeOrderBot
+
+flows:
+  start:
+    message: "Welcome to ByteCafe. What would you like to do?"
+    intents:
+      - name: place_order
+        examples:
+          - "order coffee"
+          - "place an order"
+          - "buy coffee"
+          - "latte please"
+        next: ask_size
+
+      - name: track_order
+        examples:
+          - "track my order"
+          - "where is my order"
+          - "order status"
+          - "track"
+        next: ask_order_number_for_tracking
+
+      - name: hours
+        examples:
+          - "hours"
+          - "what time do you close"
+          - "when are you open"
+          - "open hours"
+        next: show_hours
+
+  show_hours:
+    message: "We’re open Mon–Fri 8am–6pm, Sat–Sun 9am–4pm. Type 'menu' to go back."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "start"
+        next: start
+
+  ask_size:
+    message: "Great. What size would you like? (small / medium / large)"
+    input:
+      type: text
+      save_as: size
+    next: ask_drink
+
+  ask_drink:
+    message: "What drink should I make? (e.g., latte, cappuccino, americano)"
+    input:
+      type: text
+      save_as: drink
+    next: ask_milk
+
+  ask_milk:
+    message: "Any milk preference? (whole / oat / skim / none)"
+    input:
+      type: text
+      save_as: milk
+    next: ask_pickup_time
+
+  ask_pickup_time:
+    message: "What pickup time should I put on it? (e.g., 10:30am)"
+    input:
+      type: text
+      save_as: pickup_time
+    next: ask_name
+
+  ask_name:
+    message: "And what name should I put on the cup?"
+    input:
+      type: text
+      save_as: customer_name
+    actions:
+      - type: set_var
+        args:
+          name: order_status
+          value: "PLACED"
+    next: confirm_order
+
+  confirm_order:
+    message: "Confirm: {{size}} {{drink}} (milk: {{milk}}) for {{customer_name}} at {{pickup_time}}. Type 'confirm' to place it or 'cancel' to start over."
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "place it"
+          - "ok"
+        next: order_placed
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+          - "start over"
+          - "nevermind"
+        next: cancelled
+
+  order_placed:
+    message: "Done. Your order is {{order_status}}. Pickup: {{pickup_time}}. Name: {{customer_name}}. Thanks for choosing ByteCafe."
+
+  cancelled:
+    message: "No problem — I cancelled that. Type 'menu' to go back to the start."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "start"
+        next: start
+
+  ask_order_number_for_tracking:
+    message: "What’s your order number? (type anything for this demo, e.g., 12345)"
+    input:
+      type: text
+      save_as: order_number
+    next: show_tracking_result
+
+  show_tracking_result:
+    message: "Order {{order_number}} status: READY FOR PICKUP. (Demo response.)"
+
+  end:
+    message: "Goodbye."
