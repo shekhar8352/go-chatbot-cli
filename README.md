@@ -88,6 +88,19 @@ go build -o chatbot ./cmd/main.go
 ./chatbot --bot examples/support-bot.yaml
 ```
 
+### Another End-to-End Example (Coffee Order Bot)
+
+```bash
+./chatbot --bot examples/coffee-order-bot.yaml
+```
+
+Example conversation:
+
+- Choose a path:
+  - Type `order coffee` to place an order end-to-end (captures `size`, `drink`, `milk`, `pickup_time`, `customer_name`, then confirms).
+  - Type `track my order` to enter an `order_number` and see a demo status.
+  - Type `hours` to see store hours and return to the start menu.
+
 ### With Ollama LLM
 
 ```bash
