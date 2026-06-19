@@ -1,0 +1,401 @@
+bot:
+  name: InsuranceClaimBot
+
+flows:
+  start:
+    message: "Welcome to SafeGuard Insurance claims. I can help you file a new claim, check an existing claim, or speak with an agent. What do you need?"
+    intents:
+      - name: file_claim
+        examples:
+          - "file a claim"
+          - "new claim"
+          - "I need to report an accident"
+          - "report damage"
+          - "start a claim"
+          - "file claim"
+        next: ask_policy_number
+
+      - name: check_status
+        examples:
+          - "check claim status"
+          - "where is my claim"
+          - "track my claim"
+          - "claim status"
+          - "status update"
+        next: ask_claim_id_for_status
+
+      - name: speak_agent
+        examples:
+          - "speak to agent"
+          - "talk to someone"
+          - "human agent"
+          - "representative"
+          - "live agent"
+        next: agent_handoff
+
+      - name: faq
+        examples:
+          - "faq"
+          - "questions"
+          - "how does claims work"
+          - "help me understand"
+        next: show_faq
+
+  show_faq:
+    message: "Claims are processed in 3–5 business days after submission. You'll need your policy number, incident date, and a brief description. Type 'menu' to return."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "start over"
+          - "main menu"
+        next: start
+
+  ask_policy_number:
+    message: "Let's start your claim. Please enter your policy number (e.g., POL-123456)."
+    input:
+      type: text
+      save_as: policy_number
+    next: ask_incident_type
+
+  ask_incident_type:
+    message: "What type of incident are you reporting? (auto / home / health / other)"
+    intents:
+      - name: auto
+        examples:
+          - "auto"
+          - "car"
+          - "vehicle"
+          - "automobile"
+          - "accident"
+          - "collision"
+          - "car accident"
+          - "fender bender"
+        next: auto_incident_date
+
+      - name: home
+        examples:
+          - "home"
+          - "house"
+          - "property"
+          - "roof"
+          - "fire"
+          - "water damage"
+          - "burglary"
+          - "storm damage"
+        next: home_incident_date
+
+      - name: health
+        examples:
+          - "health"
+          - "medical"
+          - "hospital"
+          - "doctor"
+          - "injury"
+          - "surgery"
+          - "emergency room"
+        next: health_incident_date
+
+      - name: other
+        examples:
+          - "other"
+          - "something else"
+          - "not sure"
+          - "general"
+        next: other_incident_date
+
+  auto_incident_date:
+    message: "When did the auto incident occur? (e.g., 2026-03-15 or 'last Tuesday')"
+    input:
+      type: text
+      save_as: incident_date
+    next: auto_location
+
+  auto_location:
+    message: "Where did the incident happen? (city, intersection, or address)"
+    input:
+      type: text
+      save_as: incident_location
+    next: auto_description
+
+  auto_description:
+    message: "Briefly describe what happened (e.g., 'rear-ended at stoplight')."
+    input:
+      type: text
+      save_as: incident_description
+    actions:
+      - type: set_var
+        args:
+          name: claim_category
+          value: "AUTO"
+    next: auto_third_party
+
+  auto_third_party:
+    message: "Was another party involved? (yes / no)"
+    input:
+      type: text
+      save_as: third_party
+    next: auto_confirm
+
+  auto_confirm:
+    message: |
+      Auto claim summary:
+        Policy: {{policy_number}}
+        Date: {{incident_date}}
+        Location: {{incident_location}}
+        Description: {{incident_description}}
+        Third party: {{third_party}}
+      Type 'confirm' to submit or 'cancel' to start over.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "submit"
+          - "looks good"
+          - "correct"
+        next: claim_submitted
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+          - "start over"
+          - "nevermind"
+        next: claim_cancelled
+
+  home_incident_date:
+    message: "When did the home incident occur?"
+    input:
+      type: text
+      save_as: incident_date
+    next: home_damage_type
+
+  home_damage_type:
+    message: "What kind of damage? (fire / water / storm / theft / other)"
+    input:
+      type: text
+      save_as: damage_type
+    next: home_description
+
+  home_description:
+    message: "Describe the damage and affected areas (e.g., 'kitchen flooded, 2 inches of water')."
+    input:
+      type: text
+      save_as: incident_description
+    actions:
+      - type: set_var
+        args:
+          name: claim_category
+          value: "HOME"
+    next: home_photos
+
+  home_photos:
+    message: "Do you have photos of the damage? (yes / no — you can upload later via the portal)"
+    input:
+      type: text
+      save_as: has_photos
+    next: home_confirm
+
+  home_confirm:
+    message: |
+      Home claim summary:
+        Policy: {{policy_number}}
+        Date: {{incident_date}}
+        Damage type: {{damage_type}}
+        Description: {{incident_description}}
+        Photos available: {{has_photos}}
+      Type 'confirm' to submit or 'cancel' to start over.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "submit"
+        next: claim_submitted
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+        next: claim_cancelled
+
+  health_incident_date:
+    message: "When did the medical incident or treatment occur?"
+    input:
+      type: text
+      save_as: incident_date
+    next: health_provider
+
+  health_provider:
+    message: "Which provider or facility? (hospital name, clinic, or doctor)"
+    input:
+      type: text
+      save_as: provider_name
+    next: health_treatment
+
+  health_treatment:
+    message: "What treatment or procedure was performed?"
+    input:
+      type: text
+      save_as: incident_description
+    actions:
+      - type: set_var
+        args:
+          name: claim_category
+          value: "HEALTH"
+    next: health_confirm
+
+  health_confirm:
+    message: |
+      Health claim summary:
+        Policy: {{policy_number}}
+        Date: {{incident_date}}
+        Provider: {{provider_name}}
+        Treatment: {{incident_description}}
+      Type 'confirm' to submit or 'cancel' to start over.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "submit"
+        next: claim_submitted
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+        next: claim_cancelled
+
+  other_incident_date:
+    message: "When did the incident occur?"
+    input:
+      type: text
+      save_as: incident_date
+    next: other_description
+
+  other_description:
+    message: "Please describe the incident in detail."
+    input:
+      type: text
+      save_as: incident_description
+    actions:
+      - type: set_var
+        args:
+          name: claim_category
+          value: "OTHER"
+    next: other_confirm
+
+  other_confirm:
+    message: |
+      General claim summary:
+        Policy: {{policy_number}}
+        Date: {{incident_date}}
+        Description: {{incident_description}}
+      Type 'confirm' to submit or 'cancel' to start over.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+        next: claim_submitted
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+        next: claim_cancelled
+
+  claim_submitted:
+    message: "Your {{claim_category}} claim for policy {{policy_number}} has been submitted. Reference: CLM-{{policy_number}}. You'll receive email updates within 24 hours."
+    actions:
+      - type: set_var
+        args:
+          name: claim_status
+          value: "SUBMITTED"
+    next: post_submit_menu
+
+  post_submit_menu:
+    message: "Claim status: {{claim_status}}. Type 'menu' to return to the main menu or 'exit' to end."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "main menu"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+          - "goodbye"
+          - "done"
+        next: end
+
+  claim_cancelled:
+    message: "Claim cancelled — nothing was submitted. Type 'menu' to start again."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "start over"
+        next: start
+
+  ask_claim_id_for_status:
+    message: "Enter your claim reference number (e.g., CLM-POL-123456)."
+    input:
+      type: text
+      save_as: claim_id
+    next: show_claim_status
+
+  show_claim_status:
+    message: "Claim {{claim_id}}: UNDER REVIEW. Last updated today. An adjuster will contact you within 2 business days."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+        next: end
+
+  agent_handoff:
+    message: "Connecting you to a live agent. Average wait: 4 minutes. Please hold..."
+    actions:
+      - type: set_var
+        args:
+          name: queue_position
+          value: "3"
+    next: agent_queue
+
+  agent_queue:
+    message: "You are #{{queue_position}} in queue. Type 'menu' to cancel and return, or wait for an agent."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "cancel"
+          - "back"
+        next: start
+      - name: connected
+        examples:
+          - "agent"
+          - "connected"
+          - "hello"
+        next: agent_connected
+
+  agent_connected:
+    message: "Agent Sarah is now assisting you. How can she help with your claim today? (Demo — type 'exit' to end.)"
+    intents:
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+          - "thanks"
+          - "goodbye"
+        next: end
+
+  end:
+    message: "Thank you for using SafeGuard Insurance. Have a great day."

@@ -1,0 +1,499 @@
+bot:
+  name: ITHelpdeskBot
+
+flows:
+  start:
+    message: "IT Helpdesk — how can I help? (report issue / password reset / request access / check ticket)"
+    intents:
+      - name: report_issue
+        examples:
+          - "report issue"
+          - "something is broken"
+          - "not working"
+          - "I have a problem"
+          - "help with my computer"
+          - "bug"
+          - "error"
+        next: ask_issue_category
+
+      - name: password_reset
+        examples:
+          - "password reset"
+          - "forgot password"
+          - "reset my password"
+          - "locked out"
+          - "can't log in"
+          - "login issue"
+        next: password_verify_identity
+
+      - name: request_access
+        examples:
+          - "request access"
+          - "need access"
+          - "new software"
+          - "install application"
+          - "permissions"
+          - "grant access"
+        next: access_request_type
+
+      - name: check_ticket
+        examples:
+          - "check ticket"
+          - "ticket status"
+          - "where is my ticket"
+          - "track ticket"
+          - "ticket number"
+        next: ask_ticket_id
+
+  ask_issue_category:
+    message: "What category best describes your issue? (hardware / software / network / email / other)"
+    intents:
+      - name: hardware
+        examples:
+          - "hardware"
+          - "laptop"
+          - "monitor"
+          - "keyboard"
+          - "printer"
+          - "device"
+          - "broken screen"
+          - "my laptop won't turn on"
+        next: hardware_device_type
+
+      - name: software
+        examples:
+          - "software"
+          - "application"
+          - "app"
+          - "program"
+          - "crash"
+          - "freeze"
+          - "update"
+          - "app keeps crashing"
+        next: software_app_name
+
+      - name: network
+        examples:
+          - "network"
+          - "wifi"
+          - "internet"
+          - "vpn"
+          - "connection"
+          - "slow"
+          - "offline"
+          - "can't connect to wifi"
+        next: network_symptom
+
+      - name: email
+        examples:
+          - "email"
+          - "outlook"
+          - "mail"
+          - "inbox"
+          - "calendar"
+          - "can't send email"
+        next: email_symptom
+
+      - name: other
+        examples:
+          - "other"
+          - "something else"
+          - "not listed"
+        next: other_issue_description
+
+  hardware_device_type:
+    message: "Which device? (laptop / desktop / monitor / printer / phone / other)"
+    actions:
+      - type: set_var
+        args:
+          name: issue_category
+          value: "hardware"
+    input:
+      type: text
+      save_as: device_type
+    next: hardware_asset_tag
+
+  hardware_asset_tag:
+    message: "Enter the asset tag or serial number (found on the sticker, e.g., AT-98765)."
+    input:
+      type: text
+      save_as: asset_tag
+    next: hardware_symptom
+
+  hardware_symptom:
+    message: "Describe the hardware problem (e.g., 'won't turn on', 'screen flickering')."
+    input:
+      type: text
+      save_as: issue_description
+    actions:
+      - type: set_var
+        args:
+          name: ticket_priority
+          value: "HIGH"
+    next: hardware_troubleshoot
+
+  hardware_troubleshoot:
+    message: |
+      Quick check for {{device_type}} (asset {{asset_tag}}):
+        1. Unplug power, wait 30 seconds, plug back in.
+        2. Check all cable connections.
+      Did that fix it? (yes / no)
+    input:
+      type: text
+      save_as: troubleshoot_result
+    next: hardware_troubleshoot_result
+
+  hardware_troubleshoot_result:
+    message: "Troubleshoot result: {{troubleshoot_result}}"
+    intents:
+      - name: fixed
+        examples:
+          - "yes"
+          - "fixed"
+          - "works now"
+          - "resolved"
+          - "that worked"
+        next: issue_resolved
+      - name: not_fixed
+        examples:
+          - "no"
+          - "still broken"
+          - "didn't work"
+          - "not fixed"
+          - "same problem"
+        next: collect_contact_info
+
+  software_app_name:
+    message: "Which application is affected? (e.g., Slack, Jira, VS Code, Chrome)"
+    actions:
+      - type: set_var
+        args:
+          name: issue_category
+          value: "software"
+    input:
+      type: text
+      save_as: app_name
+    next: software_error_message
+
+  software_error_message:
+    message: "What error do you see, or what happens? (paste error text or describe behavior)"
+    input:
+      type: text
+      save_as: issue_description
+    actions:
+      - type: set_var
+        args:
+          name: ticket_priority
+          value: "MEDIUM"
+    next: software_troubleshoot
+
+  software_troubleshoot:
+    message: |
+      Try these steps for {{app_name}}:
+        1. Quit the app completely and reopen it.
+        2. Restart your computer.
+      Did that help? (yes / no)
+    input:
+      type: text
+      save_as: troubleshoot_result
+    next: software_troubleshoot_result
+
+  software_troubleshoot_result:
+    message: "Result: {{troubleshoot_result}}"
+    intents:
+      - name: fixed
+        examples:
+          - "yes"
+          - "fixed"
+          - "works"
+        next: issue_resolved
+      - name: not_fixed
+        examples:
+          - "no"
+          - "still broken"
+          - "same issue"
+        next: collect_contact_info
+
+  network_symptom:
+    message: "What's happening with your network? (no connection / slow / vpn won't connect / intermittent)"
+    input:
+      type: text
+      save_as: issue_description
+    actions:
+      - type: set_var
+        args:
+          name: issue_category
+          value: "network"
+      - type: set_var
+        args:
+          name: ticket_priority
+          value: "HIGH"
+    next: network_troubleshoot
+
+  network_troubleshoot:
+    message: |
+      Network quick fixes:
+        1. Toggle Wi-Fi off and on.
+        2. If on VPN, disconnect and reconnect.
+        3. Move closer to the access point.
+      Did any of that help? (yes / no)
+    input:
+      type: text
+      save_as: troubleshoot_result
+    next: network_troubleshoot_result
+
+  network_troubleshoot_result:
+    message: "Network troubleshoot: {{troubleshoot_result}}"
+    intents:
+      - name: fixed
+        examples:
+          - "yes"
+          - "fixed"
+          - "connected"
+          - "working now"
+        next: issue_resolved
+      - name: not_fixed
+        examples:
+          - "no"
+          - "still down"
+          - "no connection"
+        next: collect_contact_info
+
+  email_symptom:
+    message: "What's the email issue? (can't send / can't receive / calendar sync / spam)"
+    input:
+      type: text
+      save_as: issue_description
+    actions:
+      - type: set_var
+        args:
+          name: issue_category
+          value: "email"
+      - type: set_var
+        args:
+          name: ticket_priority
+          value: "MEDIUM"
+    next: email_troubleshoot
+
+  email_troubleshoot:
+    message: |
+      Email checks:
+        1. Check https://status.office.com for outages.
+        2. Sign out of Outlook and sign back in.
+      Fixed? (yes / no)
+    input:
+      type: text
+      save_as: troubleshoot_result
+    next: email_troubleshoot_result
+
+  email_troubleshoot_result:
+    message: "Email troubleshoot: {{troubleshoot_result}}"
+    intents:
+      - name: fixed
+        examples:
+          - "yes"
+          - "fixed"
+          - "sending now"
+        next: issue_resolved
+      - name: not_fixed
+        examples:
+          - "no"
+          - "still broken"
+        next: collect_contact_info
+
+  other_issue_description:
+    message: "Describe your issue in as much detail as possible."
+    input:
+      type: text
+      save_as: issue_description
+    actions:
+      - type: set_var
+        args:
+          name: issue_category
+          value: "other"
+      - type: set_var
+        args:
+          name: ticket_priority
+          value: "LOW"
+    next: collect_contact_info
+
+  collect_contact_info:
+    message: "I'll create a ticket. What's your employee ID or email?"
+    input:
+      type: text
+      save_as: employee_id
+    next: confirm_ticket
+
+  confirm_ticket:
+    message: |
+      Ticket preview:
+        Category: {{issue_category}}
+        Priority: {{ticket_priority}}
+        Description: {{issue_description}}
+        Contact: {{employee_id}}
+      Type 'confirm' to submit or 'cancel' to go back.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "submit"
+          - "create ticket"
+        next: ticket_created
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+          - "nevermind"
+        next: ticket_cancelled
+
+  ticket_created:
+    message: "Ticket TKT-{{employee_id}} created (priority: {{ticket_priority}}). You'll get updates at {{employee_id}}. SLA: 4 business hours for HIGH, 24 hours for MEDIUM/LOW."
+    actions:
+      - type: set_var
+        args:
+          name: ticket_status
+          value: "OPEN"
+    next: post_ticket_menu
+
+  post_ticket_menu:
+    message: "Ticket {{ticket_status}}. Type 'menu' for main menu or 'exit' to end."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+        next: end
+
+  ticket_cancelled:
+    message: "Ticket not created. Type 'menu' to try again."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+        next: start
+
+  issue_resolved:
+    message: "Great — glad that's resolved! Type 'menu' if you need anything else."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+          - "another issue"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+          - "thanks"
+        next: end
+
+  password_verify_identity:
+    message: "For security, enter your employee ID or company email."
+    input:
+      type: text
+      save_as: employee_id
+    next: password_send_link
+
+  password_send_link:
+    message: "A password reset link has been sent to {{employee_id}}. The link expires in 15 minutes. Type 'menu' to return."
+    actions:
+      - type: set_var
+        args:
+          name: reset_status
+          value: "LINK_SENT"
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+        next: end
+
+  access_request_type:
+    message: "What do you need access to? (software / folder / admin / vpn / other)"
+    input:
+      type: text
+      save_as: access_type
+    next: access_resource_name
+
+  access_resource_name:
+    message: "Name the specific resource (e.g., 'Figma', 'Finance shared drive', 'Production VPN')."
+    input:
+      type: text
+      save_as: resource_name
+    next: access_justification
+
+  access_justification:
+    message: "Brief business justification (why you need this access)."
+    input:
+      type: text
+      save_as: justification
+    next: access_manager
+
+  access_manager:
+    message: "Your manager's name or email (for approval routing)."
+    input:
+      type: text
+      save_as: manager_email
+    next: access_confirm
+
+  access_confirm:
+    message: |
+      Access request:
+        Type: {{access_type}}
+        Resource: {{resource_name}}
+        Justification: {{justification}}
+        Manager: {{manager_email}}
+      Type 'confirm' to submit or 'cancel' to abort.
+    intents:
+      - name: confirm
+        examples:
+          - "confirm"
+          - "yes"
+          - "submit"
+        next: access_submitted
+      - name: cancel
+        examples:
+          - "cancel"
+          - "no"
+        next: ticket_cancelled
+
+  access_submitted:
+    message: "Access request REQ-{{resource_name}} submitted. {{manager_email}} will receive an approval email within 1 hour."
+    next: post_ticket_menu
+
+  ask_ticket_id:
+    message: "Enter your ticket ID (e.g., TKT-12345)."
+    input:
+      type: text
+      save_as: ticket_id
+    next: show_ticket_status
+
+  show_ticket_status:
+    message: "Ticket {{ticket_id}}: IN PROGRESS. Assigned to: IT Tier 2. Last update: 2 hours ago."
+    intents:
+      - name: menu
+        examples:
+          - "menu"
+          - "back"
+        next: start
+      - name: exit
+        examples:
+          - "exit"
+          - "bye"
+        next: end
+
+  end:
+    message: "IT Helpdesk signing off. Have a productive day!"
