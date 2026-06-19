@@ -67,3 +67,15 @@ func (r *CLIRenderer) ShowIntents(intents []bot.Intent) {
 	}
 	fmt.Println()
 }
+
+// ShowInputOptions displays numbered choices for choice input nodes.
+func (r *CLIRenderer) ShowInputOptions(options []string) {
+	if len(options) == 0 {
+		return
+	}
+	fmt.Println("\nChoices:")
+	for i, opt := range options {
+		fmt.Printf("  %d. %s\n", i+1, opt)
+	}
+	fmt.Println()
+}
