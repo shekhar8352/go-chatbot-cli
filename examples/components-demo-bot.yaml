@@ -1,0 +1,174 @@
+bot:
+  name: ComponentsDemoBot
+  global_intents:
+    - name: menu
+      examples:
+        - "menu"
+        - "main menu"
+        - "start over"
+      next: start
+    - name: help
+      examples:
+        - "help"
+        - "what can you do"
+      next: show_help
+    - name: exit
+      examples:
+        - "exit"
+        - "bye"
+        - "quit"
+      next: goodbye
+
+flows:
+  start:
+    message: "Components demo — pick a flow to try the new input types and actions."
+    intents:
+      - name: signup
+        examples:
+          - "signup"
+          - "sign up"
+          - "register"
+        next: ask_email
+
+      - name: survey
+        examples:
+          - "survey"
+          - "feedback"
+        next: ask_rating
+
+      - name: counter
+        examples:
+          - "counter"
+          - "count"
+        next: init_counter
+
+  show_help:
+    message: "Available flows: signup (email + regex policy), survey (choice + confirm), counter (increment_var). Global: menu, help."
+
+  ask_email:
+    message: "Enter your email address:"
+    input:
+      type: email
+      save_as: user_email
+      retry_message: "That doesn't look like a valid email. Try again (e.g., you@example.com)."
+    next: ask_policy_id
+
+  ask_policy_id:
+    message: "Enter your policy ID (format: POL- followed by 6 digits, e.g., POL-123456):"
+    input:
+      type: regex
+      save_as: policy_id
+      pattern: "^POL-[0-9]{6}$"
+      retry_message: "Policy ID must match POL-XXXXXX (6 digits)."
+    next: confirm_signup
+
+  confirm_signup:
+    message: "Register {{user_email}} with policy {{policy_id}}?"
+    input:
+      type: confirm
+      save_as: signup_confirmed
+      on_yes: signup_complete
+      on_no: signup_cancelled
+
+  signup_complete:
+    message: "Registered {{user_email}} under {{policy_id}}. Welcome aboard!"
+    actions:
+      - type: set_var
+        args:
+          name: account_status
+          value: "ACTIVE"
+    next: end
+
+  signup_cancelled:
+    message: "Signup cancelled."
+    next: end
+
+  ask_rating:
+    message: "How would you rate our service?"
+    input:
+      type: choice
+      save_as: rating
+      options:
+        - excellent
+        - good
+        - fair
+        - poor
+    next: ask_feedback
+
+  ask_feedback:
+    message: "Any additional comments? (free text)"
+    input:
+      type: text
+      save_as: feedback_comment
+    actions:
+      - type: append_var
+        args:
+          name: feedback_log
+          separator: " | "
+    next: confirm_feedback
+
+  confirm_feedback:
+    message: "Submit rating '{{rating}}' with comment '{{feedback_comment}}'?"
+    input:
+      type: confirm
+      save_as: feedback_submitted
+      on_yes: feedback_saved
+      on_no: ask_rating
+
+  feedback_saved:
+    message: "Thanks! Rating: {{rating}}. Log: {{feedback_log}}."
+    actions:
+      - type: copy_var
+        args:
+          from: rating
+          to: last_rating
+    next: end
+
+  init_counter:
+    message: "Counter demo — each step increments a session variable."
+    actions:
+      - type: set_var
+        args:
+          name: counter
+          value: "0"
+    next: counter_step
+
+  counter_step:
+    message: "Counter is at {{counter}}. Continue?"
+    input:
+      type: confirm
+      save_as: keep_counting
+      on_yes: counter_increment
+      on_no: counter_done
+
+  counter_increment:
+    message: "Incrementing..."
+    actions:
+      - type: increment_var
+        args:
+          name: counter
+          by: 1
+    next: counter_check
+
+  counter_check:
+    message: "Counter is now {{counter}}. Keep going?"
+    input:
+      type: confirm
+      save_as: continue_count
+      on_yes: counter_increment
+      on_no: counter_done
+
+  counter_done:
+    message: "Final count: {{counter}}."
+    actions:
+      - type: delete_var
+        args:
+          name: keep_counting
+    next: end
+
+  end:
+    message: "Flow complete. Type 'menu' for more, 'help' for options, or 'exit' to quit."
+
+  goodbye:
+    message: "Goodbye!"
+    terminal: true
