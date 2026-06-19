@@ -23,14 +23,15 @@ func LoadFromFile(path string) (*Bot, error) {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
-	bot := &Bot{
-		Name:  botDef.Bot.Name,
-		Flows: botDef.Flows,
+	b := &Bot{
+		Name:          botDef.Bot.Name,
+		GlobalIntents: botDef.Bot.GlobalIntents,
+		Flows:         botDef.Flows,
 	}
 
-	if err := bot.ValidateBasic(); err != nil {
+	if err := b.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
-	return bot, nil
+	return b, nil
 }

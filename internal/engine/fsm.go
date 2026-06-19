@@ -18,15 +18,22 @@ func (e *Engine) Transition(nextNode string) error {
 	return nil
 }
 
-// IsTerminal checks if the current node is terminal (no next node and no intents)
+// IsTerminal checks if the current node ends the conversation.
 func (e *Engine) IsTerminal() (bool, error) {
 	node, err := e.GetCurrentNode()
 	if err != nil {
 		return false, err
 	}
 
-	// Terminal if no next node and no intents (or empty intents)
-	return node.Next == "" && len(node.Intents) == 0, nil
+	if node.Terminal {
+		return true, nil
+	}
+
+	if node.Next != "" || len(node.Intents) > 0 || node.Input != nil {
+		return false, nil
+	}
+
+	return len(e.bot.GlobalIntents) == 0, nil
 }
 
 // ErrInvalidTransition represents an invalid state transition error
